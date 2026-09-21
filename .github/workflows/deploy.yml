@@ -20,7 +20,7 @@ jobs:
           git fetch origin main
           git reset --hard origin/main
           npm ci --omit=dev
-          sudo -n systemctl restart jurnal-trade
+          sudo -n /usr/bin/systemctl restart jurnal-trade
           sleep 2
-          sudo -n systemctl is-active --quiet jurnal-trade
+          sudo -n /usr/bin/systemctl is-active --quiet jurnal-trade
           curl --fail --silent --show-error http://127.0.0.1/ > /dev/null
