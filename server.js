@@ -1,18 +1,78 @@
 const express = require('express');
 const path = require('path');
+const { Pool } = require('pg');
 
 const app = express();
 const port = process.env.PORT || 3000;
+const pool = new Pool({
+  host: process.env.DB_HOST,
+  port: process.env.DB_PORT,
+  database: process.env.DB_NAME,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD
+});
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.use(express.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-const tablePages = {
-  accounts: { title: 'Akun', heading: 'Akun prop firm', description: 'Kelola akun dan status trading kamu.', button: '+ Tambah akun', editable: true, columns: ['No.', 'Prop firm', 'Account ID', 'Balance', 'Tanggal', 'Harga', 'Status'], rows: [['1', 'TOPSTEP', 'TS-001', '$50,000', '09/09/2026', '$59.50', 'ACTIVE'], ['2', 'FUNDED FUTURES FAMILY', 'FFF-001', '$25,000', '16/09/2026', '$58.05', 'FUNDED']] },
-  payouts: { title: 'Payout', heading: 'Riwayat payout', description: 'Catat pengajuan dan payout yang diterima.', button: '+ Tambah payout', editable: false, columns: ['No.', 'Broker', 'Submission Date', 'Confirmation Date', 'Payout Total', 'Net Payout', 'Cycle'], rows: [['1', 'TOPSTEP', '20/08/2026', '20/08/2026', '$0.00', '$0.00', '0'], ['2', 'TOPSTEP', '19/09/2026', '24/08/2026', '$719.82', '$719.82', '1']] },
-  expenses: { title: 'Pengeluaran', heading: 'Expense history', description: 'Biaya akun funded dan challenge.', button: '+ Tambah expense', editable: false, columns: ['No.', 'Prop Firm', 'Balance', 'Tanggal', 'Harga', 'Status'], rows: [['1', 'FUNDEDNEXT', '$50,000', '15/09/2026', '$69.99', 'FAILED'], ['2', 'TOPSTEP', '$50,000', '15/09/2026', '$59.50', 'EVAL']] }
+const pages = {
+  accounts: {
+    title: 'Akun', heading: 'Akun prop firm', description: 'Kelola akun dan status trading kamu.', button: '+ Tambah akun',
+    columns: ['No.', 'Prop firm', 'Account ID', 'Balance', 'Tanggal', 'Harga', 'Status'],
+    query: 'SELECT id, prop_firm, account_id, balance, trade_date, price, status FROM accounts ORDER BY id'
+  },
+  payouts: {
+    title: 'Payout', heading: 'Riwayat payout', description: 'Catat pengajuan dan payout yang diterima.', button: '+ Tambah payout',
+    columns: ['No.', 'Broker', 'Submission Date', 'Confirmation Date', 'Payout Total', 'Net Payout', 'Cycle'],
+    query: 'SELECT id, broker, submission_date, confirmation_date, payout_total, net_payout, cycle FROM payouts ORDER BY id'
+  },
+  expenses: {
+    title: 'Pengeluaran', heading: 'Expense history', description: 'Biaya akun funded dan challenge.', button: '+ Tambah expense',
+    columns: ['No.', 'Prop Firm', 'Balance', 'Tanggal', 'Harga', 'Status'],
+    query: 'SELECT id, prop_firm, balance, expense_date, price, status FROM expenses ORDER BY id'
+  }
 };
+
 app.get('/', (req, res) => res.render('dashboard'));
-for (const menu of Object.keys(tablePages)) app.get(`/${menu}`, (req, res) => res.render('table-page', { ...tablePages[menu], active: menu }));
+
+for (const [menu, page] of Object.entries(pages)) {
+  app.get(`/${menu}`, async (req, res, next) => {
+    try {
+      const { rows } = await pool.query(page.query);
+      res.render('table-page', { ...page, active: menu, rows });
+    } catch (error) { next(error); }
+  });
+}
+
+app.post('/accounts', async (req, res, next) => {
+  try {
+    const { prop_firm, account_id, balance, trade_date, price, status } = req.body;
+    await pool.query('INSERT INTO accounts (prop_firm, account_id, balance, trade_date, price, status) VALUES ($1,$2,$3,$4,$5,$6)', [prop_firm, account_id, balance, trade_date, price, status]);
+    res.redirect('/accounts');
+  } catch (error) { next(error); }
+});
+
+app.post('/payouts', async (req, res, next) => {
+  try {
+    const { broker, submission_date, confirmation_date, payout_total, net_payout, cycle } = req.body;
+    await pool.query('INSERT INTO payouts (broker, submission_date, confirmation_date, payout_total, net_payout, cycle) VALUES ($1,$2,$3,$4,$5,$6)', [broker, submission_date, confirmation_date || null, payout_total, net_payout, cycle]);
+    res.redirect('/payouts');
+  } catch (error) { next(error); }
+});
+
+app.post('/expenses', async (req, res, next) => {
+  try {
+    const { prop_firm, balance, expense_date, price, status } = req.body;
+    await pool.query('INSERT INTO expenses (prop_firm, balance, expense_date, price, status) VALUES ($1,$2,$3,$4,$5)', [prop_firm, balance, expense_date, price, status]);
+    res.redirect('/expenses');
+  } catch (error) { next(error); }
+});
+
+app.use((error, req, res, next) => {
+  console.error(error);
+  res.status(500).send('Database error');
+});
+
 app.listen(port, () => console.log(`Jurnal Trade running on http://localhost:${port}`));
