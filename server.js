@@ -90,6 +90,44 @@ app.post('/expenses', async (req, res, next) => {
   } catch (error) { next(error); }
 });
 
+const editQueries = {
+  accounts: {
+    update: 'UPDATE accounts SET prop_firm=$1, account_id=$2, balance=$3, trade_date=$4, price=$5, status=$6 WHERE id=$7',
+    remove: 'DELETE FROM accounts WHERE id=$1'
+  },
+  payouts: {
+    update: 'UPDATE payouts SET broker=$1, submission_date=$2, confirmation_date=$3, payout_total=$4, net_payout=$5, cycle=$6 WHERE id=$7',
+    remove: 'DELETE FROM payouts WHERE id=$1'
+  },
+  expenses: {
+    update: 'UPDATE expenses SET prop_firm=$1, balance=$2, expense_date=$3, price=$4, status=$5 WHERE id=$6',
+    remove: 'DELETE FROM expenses WHERE id=$1'
+  }
+};
+
+app.post('/:menu/:id/edit', async (req, res, next) => {
+  try {
+    const query = editQueries[req.params.menu];
+    if (!query) return res.sendStatus(404);
+    const values = req.params.menu === 'accounts'
+      ? [req.body.prop_firm, req.body.account_id, req.body.balance, req.body.trade_date, req.body.price, req.body.status, req.params.id]
+      : req.params.menu === 'payouts'
+        ? [req.body.broker, req.body.submission_date, req.body.confirmation_date || null, req.body.payout_total, req.body.net_payout, req.body.cycle, req.params.id]
+        : [req.body.prop_firm, req.body.balance, req.body.expense_date, req.body.price, req.body.status, req.params.id];
+    await pool.query(query.update, values);
+    res.redirect(`/${req.params.menu}`);
+  } catch (error) { next(error); }
+});
+
+app.post('/:menu/:id/delete', async (req, res, next) => {
+  try {
+    const query = editQueries[req.params.menu];
+    if (!query) return res.sendStatus(404);
+    await pool.query(query.remove, [req.params.id]);
+    res.redirect(`/${req.params.menu}`);
+  } catch (error) { next(error); }
+});
+
 app.use((error, req, res, next) => {
   console.error(error);
   res.status(500).send('Database error');
