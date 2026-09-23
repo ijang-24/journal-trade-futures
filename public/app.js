@@ -25,6 +25,7 @@ function rememberFirm(row) { const field = row.querySelector('input[list="prop-f
 function setupDatalist() { if (document.querySelector('#prop-firms')) return; const list = document.createElement('datalist'); list.id = 'prop-firms'; list.innerHTML = firms.map(firm => `<option value="${firm}">`).join(''); document.body.appendChild(list); }
 setupDatalist();
 if (filter) filter.addEventListener('change', refresh); if (search) search.addEventListener('input', refresh); if (table) table.addEventListener('change', refresh);
+document.querySelectorAll('.edit-row').forEach(form => form.addEventListener('submit', event => { const row = form.closest('tr'); row.querySelectorAll('input[name], select[name]').forEach(field => { const hidden = document.createElement('input'); hidden.type = 'hidden'; hidden.name = field.name; hidden.value = field.value; form.appendChild(hidden); }); }));
 if (table) table.addEventListener('click', event => { const row = event.target.closest('tr'); if (event.target.classList.contains('delete')) { row.remove(); refresh(); } if (event.target.classList.contains('save-row')) { rememberFirm(row); event.target.textContent = 'Tersimpan'; event.target.disabled = true; } });
 const addRow = document.querySelector('#add-row');
 if (addRow && table) addRow.addEventListener('click', () => { const row = document.createElement('tr'); row.innerHTML = rowMarkup(); table.appendChild(row); refresh(); row.querySelector('input')?.focus(); });

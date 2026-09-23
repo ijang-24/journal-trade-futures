@@ -20,7 +20,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 const pages = {
   accounts: {
     title: 'Akun', heading: 'Akun prop firm', description: 'Kelola akun dan status trading kamu.', button: '+ Tambah akun',
-    columns: ['No.', 'Prop firm', 'Account ID', 'Balance', 'Tanggal', 'Harga', 'Status'],
+    columns: ['Prop firm', 'Account ID', 'Balance', 'Tanggal', 'Harga', 'Status'],
     query: 'SELECT id, prop_firm, account_id, balance, trade_date, price, status FROM accounts ORDER BY id'
   },
   payouts: {
