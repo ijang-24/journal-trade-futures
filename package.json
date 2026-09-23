@@ -2,16 +2,28 @@
   "name": "jurnal-trade",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "electron.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "electron .",
+    "web": "node server.js",
     "dev": "node --watch server.js",
+    "dist": "electron-builder --win nsis",
     "test": "node -e \"require('./server'); setTimeout(() => process.exit(0), 300)\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
+  "build": {
+    "appId": "com.jurnaltrade.desktop",
+    "productName": "Jurnal Trade Futures",
+    "files": ["electron.js", "server.js", "views/**/*", "public/**/*", "package.json"],
+    "win": { "target": "nsis" }
+  },
+  "devDependencies": {
+    "electron": "^38.2.0",
+    "electron-builder": "^26.0.12"
+  },
   "dependencies": {
     "ejs": "^6.0.1",
     "express": "^5.2.1",
