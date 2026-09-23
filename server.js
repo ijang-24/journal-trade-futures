@@ -25,12 +25,12 @@ const pages = {
   },
   payouts: {
     title: 'Payout', heading: 'Riwayat payout', description: 'Catat pengajuan dan payout yang diterima.', button: '+ Tambah payout',
-    columns: ['No.', 'Broker', 'Submission Date', 'Confirmation Date', 'Payout Total', 'Net Payout', 'Cycle'],
+    columns: ['Broker', 'Submission Date', 'Confirmation Date', 'Payout Total', 'Net Payout', 'Cycle'],
     query: 'SELECT id, broker, submission_date, confirmation_date, payout_total, net_payout, cycle FROM payouts ORDER BY id'
   },
   expenses: {
     title: 'Pengeluaran', heading: 'Expense history', description: 'Biaya akun funded dan challenge.', button: '+ Tambah expense',
-    columns: ['No.', 'Prop Firm', 'Balance', 'Tanggal', 'Harga', 'Status'],
+    columns: ['Prop Firm', 'Balance', 'Tanggal', 'Harga', 'Status'],
     query: 'SELECT id, prop_firm, balance, expense_date, price, status FROM expenses ORDER BY id'
   }
 };
