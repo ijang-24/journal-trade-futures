@@ -35,7 +35,22 @@ const pages = {
   }
 };
 
-app.get('/', (req, res) => res.render('dashboard'));
+app.get('/', async (req, res, next) => {
+  try {
+    const [accounts, payouts, expenses] = await Promise.all([
+      pool.query('SELECT id, prop_firm, account_id, balance, trade_date, price, status FROM accounts ORDER BY id'),
+      pool.query('SELECT id, broker, submission_date, confirmation_date, payout_total, net_payout, cycle FROM payouts ORDER BY id'),
+      pool.query('SELECT id, prop_firm, balance, expense_date, price, status FROM expenses ORDER BY id')
+    ]);
+    const total = (rows, key) => rows.reduce((sum, row) => sum + Number(row[key] || 0), 0);
+    res.render('dashboard', {
+      accounts: accounts.rows,
+      payouts: payouts.rows,
+      expenses: expenses.rows,
+      totals: { payout: total(payouts.rows, 'net_payout'), expense: total(expenses.rows, 'price') }
+    });
+  } catch (error) { next(error); }
+});
 
 for (const [menu, page] of Object.entries(pages)) {
   app.get(`/${menu}`, async (req, res, next) => {
