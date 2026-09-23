@@ -37,17 +37,22 @@ const pages = {
 
 app.get('/', async (req, res, next) => {
   try {
-    const [accounts, payouts, expenses] = await Promise.all([
+    const [accounts, payouts, expenses, summary, events] = await Promise.all([
       pool.query('SELECT id, prop_firm, account_id, balance, trade_date, price, status FROM accounts ORDER BY id'),
       pool.query('SELECT id, broker, submission_date, confirmation_date, payout_total, net_payout, cycle FROM payouts ORDER BY id'),
-      pool.query('SELECT id, prop_firm, balance, expense_date, price, status FROM expenses ORDER BY id')
+      pool.query('SELECT id, firm AS prop_firm, description, quantity, unit_price AS price, quantity * unit_price AS total, expense_date, category FROM expense_details ORDER BY id'),
+      pool.query('SELECT starting_capital, target_capital FROM journal_summary ORDER BY journal_date DESC LIMIT 1'),
+      pool.query('SELECT firm, event_type, SUM(quantity)::int AS quantity FROM account_events GROUP BY firm, event_type ORDER BY firm, event_type')
     ]);
     const total = (rows, key) => rows.reduce((sum, row) => sum + Number(row[key] || 0), 0);
+    const counts = events.rows.reduce((result, row) => { result[row.event_type] = (result[row.event_type] || 0) + row.quantity; return result; }, {});
     res.render('dashboard', {
       accounts: accounts.rows,
       payouts: payouts.rows,
       expenses: expenses.rows,
-      totals: { payout: total(payouts.rows, 'net_payout'), expense: total(expenses.rows, 'price') }
+      summary: summary.rows[0] || { starting_capital: 0, target_capital: 0 },
+      events: counts,
+      totals: { payout: total(payouts.rows, 'net_payout'), expense: total(expenses.rows, 'total') }
     });
   } catch (error) { next(error); }
 });
